@@ -1,5 +1,5 @@
 [tool.poetry]
-name = `workflomics-benchmarker`
+name = "workflomics-benchmarker"
 version = "0.1.0"
 description = "Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem."
 authors = ["Nauman Ahmed <n.ahmed@esciencecenter.nl",
@@ -10,7 +10,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-PyYAML = "^6.0"
+pyyaml = "^6.0"
+cwltool= "^3.1"
 
 [tool.poetry.dev-dependencies]
 
@@ -19,6 +20,10 @@ ipykernel = "^6.27.1"
 pytest = "^7.4.3"
 pytest-datadir = "^1.5.0"
 pytest-cov = "^4.1.0"
+
+[tool.poetry.scripts]
+workflomics-run = "workflomics-benchmarker.cli:run"
+workflomics-benchmark = "workflomics-benchmarker.cli:benchmark"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
