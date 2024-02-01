@@ -144,3 +144,5 @@ dmypy.json
 #VS Code
 .vscode/
 
+tests/data/benchmarks.json
+tests/data/workflow.cwl_output/*
