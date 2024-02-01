@@ -1,11 +1,12 @@
-from cwltool_wrapper import CWLToolWrapper
 import subprocess
 from pathlib import Path
 import os
 import re
 import datetime
 import json
-from loggingwrapper import LoggingWrapper
+
+from benchmarker.loggingwrapper import LoggingWrapper
+from benchmarker.cwltool_wrapper import CWLToolWrapper
 
 class CWLToolRuntimeBenchmark(CWLToolWrapper):
     """Runtime benchmarking class  to gather information about the runtime of each step in a workflow."""
@@ -78,7 +79,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 elif step_start:
                     if f'[job {step}] Max memory used' in line:
                         max_memory_step = int(line.split()[-1].rstrip(line.split()[-1][-3:]))
-                        if line.split()[-1][-3:] == "GiB":
+                        if line.split()[-1].endswith("GiB"):
                             max_memory_step = max_memory_step * 1024
                         if max_memory_step == 0:
                             max_memory_step = 1

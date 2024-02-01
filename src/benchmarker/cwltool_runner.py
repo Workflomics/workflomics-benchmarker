@@ -1,11 +1,9 @@
-from cwltool_wrapper import CWLToolWrapper
+import os
 import subprocess
 from pathlib import Path
-import re
-import datetime
-import json
-from loggingwrapper import LoggingWrapper
-import os
+
+from benchmarker.cwltool_wrapper import CWLToolWrapper
+from benchmarker.loggingwrapper import LoggingWrapper
 
 class CWLToolRunner(CWLToolWrapper):
 

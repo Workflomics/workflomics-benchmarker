@@ -1,14 +1,8 @@
-import subprocess
 import argparse
-import yaml
-import re
-import json
-import datetime
-from pathlib import Path
-from loggingwrapper import LoggingWrapper
 
-from cwltool_runtime_benchmark import CWLToolRuntimeBenchmark
-from cwltool_runner import CWLToolRunner
+from benchmarker.loggingwrapper import LoggingWrapper
+from benchmarker.cwltool_runtime_benchmark import CWLToolRuntimeBenchmark
+from benchmarker.cwltool_runner import CWLToolRunner
 
 
 def add_benchmark_args(parser):
@@ -28,16 +22,16 @@ def add_run_args(parser):
     parser.add_argument('workflows', help='Path to the workflows directory.')
    
 
-if __name__ == '__main__':
+def main():
     """Main entry point for the workflomics_runner application."""
 
     LoggingWrapper.info("Starting workflomics_runner...", color="green", bold=True)
 
     parser = argparse.ArgumentParser(description='Wrapper for cwltool command.')
     # Adding subparsers for the benchmark and run commands
-    subparcers = parser.add_subparsers(dest='subcommand', help='Subcommands.')
-    parser_benchmark = subparcers.add_parser('benchmark', help='Run the benchmark.')
-    parser_run = subparcers.add_parser('run', help='Run the workflow.')
+    subparsers = parser.add_subparsers(dest='subcommand', help='Subcommands.')
+    parser_benchmark = subparsers.add_parser('benchmark', help='Run the benchmark.')
+    parser_run = subparsers.add_parser('run', help='Run the workflow.')
 
     add_benchmark_args(parser_benchmark)
     add_run_args(parser_run)
@@ -53,3 +47,6 @@ if __name__ == '__main__':
 
     op.run_workflows()
 
+
+if __name__ == "__main__":
+    main()

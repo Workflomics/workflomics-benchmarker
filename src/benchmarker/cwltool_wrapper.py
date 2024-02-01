@@ -1,10 +1,9 @@
 from pathlib import Path
 import yaml
 import subprocess
-from loggingwrapper import LoggingWrapper
 import sys
 
-
+from benchmarker.loggingwrapper import LoggingWrapper
 class CWLToolWrapper():
     ''' The class contains the common methods for the benchmarking and running CWL workflows.'''
 
