@@ -3,7 +3,7 @@ import yaml
 import subprocess
 import sys
 
-from benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 class CWLToolWrapper():
     ''' The class contains the common methods for the benchmarking and running CWL workflows.'''
 

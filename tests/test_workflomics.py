@@ -1,5 +1,5 @@
 import sys
-from benchmarker.workflomics import main
+from workflomics_benchmarker.workflomics import main
 
 
 def test_becnhmark_run(shared_datadir):

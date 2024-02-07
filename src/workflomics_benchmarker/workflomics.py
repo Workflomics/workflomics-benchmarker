@@ -1,8 +1,8 @@
 import argparse
 
-from benchmarker.loggingwrapper import LoggingWrapper
-from benchmarker.cwltool_runtime_benchmark import CWLToolRuntimeBenchmark
-from benchmarker.cwltool_runner import CWLToolRunner
+from workflomics_benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.cwltool_runtime_benchmark import CWLToolRuntimeBenchmark
+from workflomics_benchmarker.cwltool_runner import CWLToolRunner
 
 
 def add_benchmark_args(parser):

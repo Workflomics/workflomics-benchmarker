@@ -5,8 +5,8 @@ import re
 import datetime
 import json
 
-from benchmarker.loggingwrapper import LoggingWrapper
-from benchmarker.cwltool_wrapper import CWLToolWrapper
+from workflomics_benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
 
 class CWLToolRuntimeBenchmark(CWLToolWrapper):
     """Runtime benchmarking class  to gather information about the runtime of each step in a workflow."""
