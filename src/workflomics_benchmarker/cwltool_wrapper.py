@@ -5,11 +5,11 @@ import sys
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 class CWLToolWrapper():
-    ''' The class contains the common methods for the benchmarking and running CWL workflows.'''
+    """ The class contains the common methods for the benchmarking and running CWL workflows."""
 
 
     def __init__(self, args):
-        '''Initialize the class'''
+        """Initialize the class"""
         if not Path(args.workflows).is_dir():
             LoggingWrapper.error(f"The path {args.workflows} is not a directory.")
             sys.exit(1)
@@ -33,7 +33,7 @@ class CWLToolWrapper():
 
 
     def check_cwltool(self):
-        '''Check if cwltool is installed and return the version'''
+        """Check if cwltool is installed and return the version"""
         try:
             result = subprocess.run(['cwltool', '--version'], capture_output=True, text=True)
             version = result.stdout.strip().split()[-1]
@@ -43,7 +43,7 @@ class CWLToolWrapper():
         return version
 
     def update_input_yaml(self, input_yaml_path):
-        '''Update the input yaml file with the paths to the input files'''
+        """Update the input yaml file with the paths to the input files"""
         inputs = {}
         with open(input_yaml_path, 'r') as file:
             input_data = yaml.safe_load(file)
@@ -63,7 +63,7 @@ class CWLToolWrapper():
         return inputs
 
     def extract_steps_from_cwl(self, workflow_file):
-        '''Extract the step names from the cwl workflow file'''
+        """Extract the step names from the cwl workflow file"""
         with open(workflow_file, 'r') as file:
             data = yaml.safe_load(file)
         steps = []

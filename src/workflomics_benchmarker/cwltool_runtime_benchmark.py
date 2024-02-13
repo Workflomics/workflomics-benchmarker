@@ -4,6 +4,7 @@ import os
 import re
 import datetime
 import json
+from typing import Dict
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
@@ -50,7 +51,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         success_pattern = re.compile(r'\[job (.+)\] completed success') #pattern to match the success of a step
         fail_pattern = re.compile(r'\[job (.+)\] completed permanentFail') #pattern to match the failure of a step
         success_steps = set()
-        step_results = [{"step": step, "status": "unknown", "time": "unknown", "memory": "unknown", "warnings": "unknown", "errors": "unknown"} for step in steps]
+        step_results = [{"step": step, "status": "fail", "time": "unknown", "memory": "unknown", "warnings": "unknown", "errors": "unknown"} for step in steps]
         for line in output_lines: # iterate over the output of the workflow and find which steps were executed successfully
             if success_pattern.search(line):
                 success_steps.add(success_pattern.search(line).group(1))
@@ -114,18 +115,15 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             "steps": step_results,
         }
 
-
-
-    
     def calc_value(self, name):
         """Calculate the benchmark values for the given benchmark."""
         if name == "status":
             value = 0
             for entry in self.workflow_benchmark_result["steps"]:
-                if entry[name] != "unknown":
+                if entry[name] != "fail":
                     value = value + 1
                 else:
-                    return "unknown"
+                    return "fail"
         elif name == "time":
             value = 0
             for entry in self.workflow_benchmark_result["steps"]:
@@ -147,14 +145,14 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 if entry[name] != "unknown":
                     value = value + len(entry["warnings"])
                 else:
-                    return "unknown"
+                    return value
         elif name == "errors":
             value = 0
             for entry in self.workflow_benchmark_result["steps"]:
                 if entry[name] != "unknown":
                     value = value + len(entry["errors"])
                 else:
-                    return "unknown"
+                    return value
         return value
     
     def calc_desirability(self, name, value):
@@ -165,10 +163,14 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             else:
                 return 0
         elif name == "errors":
-            if len(value) == 0:
-                return 1
+            if(isinstance(value, list)):
+                count = len(value)
             else:
-                return 0    
+                count = value
+            if count == 0:
+                return 0
+            else:
+                return -1
         elif name == "time":
             if value == "unknown":
                 return 0
@@ -181,7 +183,10 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             count = value
         elif name == "warnings":
             bins = self.WARNINGS_DESIRABILITY_BINS
-            count = len(value)
+            if(isinstance(value, list)):
+                count = len(value)
+            else:
+                count = value
            
         for bin in bins.keys():
             if "-" in bin:
@@ -195,9 +200,9 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         benchmark = []
         for entry in self.workflow_benchmark_result["steps"]:
                 step_benchmark = {
-                    "description": entry["step"].rstrip('0123456789'),
+                    "label": entry["step"].rstrip('0123456789'), # Label the step without the number at the end
                     "value": entry[name],
-                    "desirability_value": 0 if entry["status"] == "fail" or entry["status"] == "unknown" else self.calc_desirability(name, entry[name])
+                    "desirability": 0 if entry["status"] == "fail" or entry["status"] == "unknown" else self.calc_desirability(name, entry[name])
                 }
                 benchmark.append(step_benchmark)
         return benchmark
@@ -231,40 +236,54 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
            
             all_workflow_data["workflowName"] = workflow_name
 
-            all_workflow_data["benchmarks"].append({"benchmark_long_title": "Status",
-                                                    "benchmark_description": "Status for each step in the workflow",
-                                                    "benchmark_title": "Status",
-                                                    "benchmark_unit": "status",
-                                                    "values": str(self.calc_value("status")) + "/" + str(self.workflow_benchmark_result["n_steps"]),
+            all_workflow_data["benchmarks"].append({
+                                                    "description": "Status for each step in the workflow",
+                                                    "title": "Status",
+                                                    "unit": "status",
+                                                    "aggregate_value": {
+                                                        "value": str(self.calc_value("status")),
+                                                        "desirability": self.calc_desirability("status", self.calc_value("status"))
+                                                    },
                                                     "steps": self.get_benchmark("status"),
                                                     })
             all_workflow_data["benchmarks"].append({
-                                                    "benchmark_long_title": "Execution time",
-                                                    "benchmark_description": "Execution time for each step in the workflow",
-                                                    "benchmark_title": "Execution time",
-                                                    "benchmark_unit": "seconds",
-                                                    "values": "unknown" if self.workflow_benchmark_result["status"] == "fail" else self.calc_value("time"),
+                                                    "description": "Execution time for each step in the workflow",
+                                                    "title": "Execution time",
+                                                    "unit": "seconds",
+                                                    "aggregate_value": {
+                                                        "value": self.calc_value("time"),
+                                                        "desirability": self.calc_desirability("time", self.calc_value("time"))
+                                                    },
                                                     "steps": self.get_benchmark("time"),
                                                     })
-            all_workflow_data["benchmarks"].append({"benchmark_long_title": "Memory usage",
-                                                    "benchmark_description": "Memory usage for each step in the workflow",
-                                                    "benchmark_title": "Memory usage",
-                                                    "benchmark_unit": "megabytes",
-                                                    "values": "unknown" if self.workflow_benchmark_result["status"] == "fail" else self.calc_value("memory"),
+            all_workflow_data["benchmarks"].append({
+                                                    "description": "Memory usage for each step in the workflow",
+                                                    "title": "Memory usage",
+                                                    "unit": "MB",
+                                                    "aggregate_value": {
+                                                        "value": self.calc_value("memory"),
+                                                        "desirability": self.calc_desirability("memory", self.calc_value("memory"))
+                                                    },
                                                     "steps": self.get_benchmark("memory"),
                                                     })
-            all_workflow_data["benchmarks"].append({"benchmark_long_title": "Warnings",
-                                                    "benchmark_description": "Warnings for each step in the workflow",
-                                                    "benchmark_title": "Warnings",
-                                                    "benchmark_unit": "warnings",
-                                                    "values": "unknown" if self.workflow_benchmark_result["status"] == "fail" else self.calc_value("warnings"),
+            all_workflow_data["benchmarks"].append({
+                                                    "description": "Warnings for each step in the workflow",
+                                                    "title": "Warnings",
+                                                    "unit": "warning count",
+                                                    "aggregate_value": {
+                                                        "value": self.calc_value("warnings"),
+                                                        "desirability": self.calc_desirability("warnings", self.calc_value("warnings"))
+                                                    },
                                                     "steps": self.get_benchmark("warnings"),
                                                     })
-            all_workflow_data["benchmarks"].append({"benchmark_long_title": "Errors",
-                                                    "benchmark_description": "Errors for each step in the workflow",
-                                                    "benchmark_title": "Errors",
-                                                    "benchmark_unit": "errors",
-                                                    "values": "unknown" if self.workflow_benchmark_result["status"] == "fail" else self.calc_value("errors"),
+            all_workflow_data["benchmarks"].append({
+                                                    "description": "Errors for each step in the workflow",
+                                                    "title": "Errors",
+                                                    "unit": "error count",
+                                                    "aggregate_value": {
+                                                        "value": self.calc_value("errors"),
+                                                        "desirability": self.calc_desirability("errors", self.calc_value("errors"))
+                                                    },
                                                     "steps": self.get_benchmark("errors"),
                                                     })
 
