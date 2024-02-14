@@ -123,7 +123,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         step_results = [
             {
                 "step": step,
-                "status": "fail",
+                "status": "✗",
                 "time": "unknown",
                 "memory": "unknown",
                 "warnings": "unknown",
@@ -141,7 +141,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             elif fail_pattern.search(line):
                 for entry in step_results:
                     if entry["step"] == fail_pattern.search(line).group(1):
-                        entry["status"] = "fail"
+                        entry["status"] = "✗"
                         entry["time"] = "unknown"
                         entry["memory"] = "unknown"
                         entry["warnings"] = "unknown"
@@ -192,16 +192,16 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 step_results
             ):  # store the benchmark values for each successfully executed step
                 if entry["step"] == step:
-                    entry["status"] = "✔"
+                    entry["status"] = "✓"
                     entry["time"] = execution_time_step
                     entry["memory"] = max_memory_step
                     entry["warnings"] = warnings_step
                     entry["errors"] = errors_step
 
-        workflow_status = "✔"
+        workflow_status = "✓"
         for entry in step_results:  # check if the workflow was executed successfully
-            if entry["status"] == "fail" or entry["status"] == "unknown":
-                workflow_status = "fail"
+            if entry["status"] == "✗" or entry["status"] == "unknown":
+                workflow_status = "✗"
                 break
 
         self.workflow_benchmark_result = {
@@ -210,7 +210,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             "steps": step_results,
         }
 
-    def calculate_benchmark_value(self, benchmark_name) -> int | Literal["fail", "unknown"]:
+    def calculate_benchmark_value(self, benchmark_name) -> int | Literal["✗", "unknown"]:
         """Calculate the benchmark value for the given benchmark.
 
         Parameters
@@ -220,17 +220,17 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         
         Returns
         -------
-        value: int | Literal["fail", "unknown"]
+        value: int | Literal["✗", "unknown"]
             The value of the benchmark.
         """
         value: int = 0
         for entry in self.workflow_benchmark_result["steps"]:
             match benchmark_name:
                 case "status":
-                    if entry[benchmark_name] != "fail":
-                        value = value + 1
+                    if entry[benchmark_name] != "✗":
+                        value = "✓"
                     else:
-                        return "fail"
+                        return "✗"
                 case "time":
                     if entry[benchmark_name] != "unknown":
                         value = value + entry["time"]
@@ -271,7 +271,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         """
         match benchmark_name:
             case "status":
-                return 1 if value == "✔" else 0
+                return 1 if value == "✓" else -1
             case "errors":
                 if isinstance(value, list):
                     value = len(value)
@@ -311,7 +311,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 "value": val,
                 "desirability": (
                     0
-                    if entry["status"] == "fail" or entry["status"] == "unknown"
+                    if entry["status"] == "✗" or entry["status"] == "unknown"
                     else self.calc_desirability(name, val)
                 ),
             }
@@ -332,7 +332,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             LoggingWrapper.info("Benchmarking " + workflow_name + "...", color="green")
             self.run_workflow(workflow_path)
             if (
-                self.workflow_benchmark_result["status"] == "fail"
+                self.workflow_benchmark_result["status"] == "✗"
             ):  # check if the workflow was executed successfully
                 LoggingWrapper.error(workflow_name + " failed")
                 failed_workflows.append(workflow_name)
@@ -364,7 +364,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 {
                     "description": "Status for each step in the workflow",
                     "title": "Status",
-                    "unit": "status or fail",
+                    "unit": "✓ or ✗",
                     "aggregate_value": {
                         "value": str(self.calculate_benchmark_value("status")),
                         "desirability": self.calc_desirability(
