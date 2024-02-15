@@ -143,10 +143,6 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             elif failed_match:
                 failed_tool_name = failed_match.group(1) if failed_match.group(1) is not None else failed_match.group(2)
                 for entry in step_results:
-                    print("entry step")
-                    print(entry["step"])
-                    print("Compare to")
-                    print(failed_tool_name)   
                     # set the benchmark values for the failed steps to N/A
                     if entry["step"] == failed_tool_name:
                         entry["status"] = "✗"

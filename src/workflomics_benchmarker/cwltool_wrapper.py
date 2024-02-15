@@ -19,7 +19,10 @@ class CWLToolWrapper():
         else:
             self.container = "docker"
             
-        self.outdir = args.outdir if hasattr(args, 'outdir') else args.workflows
+        if not hasattr(args, 'outdir') or args.outdir is None:
+            self.outdir = args.workflows
+        else:
+            self.outdir = args.outdir
 
         if not hasattr(args, 'input') or args.input is None:
             self.input_yaml_path = Path(args.workflows).joinpath('input.yml')
