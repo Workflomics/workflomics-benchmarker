@@ -34,8 +34,8 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         "1001+": 0,
     }
     WARNINGS_DESIRABILITY_BINS = {
-        "0-1": 0,
-        "2-3": -0.25,
+        "0-0": 0,
+        "1-3": -0.25,
         "4-5": -0.5,
         "6-7": -0.75,
         "8+": -1,
@@ -227,13 +227,13 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             The value of the benchmark.
         """
         value: int = 0
-        for entry in self.workflow_benchmark_result["steps"]:
+        for index, entry in enumerate(self.workflow_benchmark_result["steps"], start=1):
             match benchmark_name:
                 case "status":
                     if entry[benchmark_name] != "✗" and entry[benchmark_name] != "-":
                         value = "✓"
                     else:
-                        return "✗"
+                        return  f"({index-1}/{len(self.workflow_benchmark_result['steps'])}) ✗"
                 case "time":
                     if entry[benchmark_name] != "N/A":
                         value = value + entry["time"]
@@ -270,10 +270,10 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             case "status":
                 if value == "✓":
                     return 1
-                elif value == "✗":
-                    return -1
-                else:
+                elif value == "-":
                     return 0
+                else:
+                    return -1
             case "errors":
                 if isinstance(value, list):
                     value = len(value)
