@@ -150,8 +150,6 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                         entry["memory"] = "N/A"
                         entry["warnings"] = "N/A"
                         entry["errors"] = "N/A"
-        print("success_steps")
-        print(success_steps)
         for (
             step
         ) in (
