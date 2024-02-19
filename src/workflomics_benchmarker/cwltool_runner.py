@@ -2,8 +2,8 @@ import os
 import subprocess
 from pathlib import Path
 
-from benchmarker.cwltool_wrapper import CWLToolWrapper
-from benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
+from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 
 class CWLToolRunner(CWLToolWrapper):
 

@@ -24,8 +24,8 @@ steps:
     run: https://raw.githubusercontent.com/Workflomics/containers/main/cwl/tools/PeptideProphet/PeptideProphet.cwl
     in:
       PeptideProphet_in_1: Comet_01/Comet_out_1
-      PeptideProphet_in_2: input_1
-      PeptideProphet_in_3: input_2
+      PeptideProphet_in_2: input_2
+      PeptideProphet_in_3: input_1
     out: [PeptideProphet_out_1, PeptideProphet_out_2]
   ProteinProphet_03:
     run: https://raw.githubusercontent.com/Workflomics/containers/main/cwl/tools/ProteinProphet/ProteinProphet.cwl

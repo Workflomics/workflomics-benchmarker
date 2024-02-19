@@ -38,8 +38,8 @@ steps:
     in:
       StPeter_in_1: ProteinProphet_03/ProteinProphet_out_1
       #Manaual Edit: StPeter_in_2: Comet_01/Comet_out_1 -> PeptideProphet_02/PeptideProphet_out_1
-      StPeter_in_2: PeptideProphet_02/PeptideProphet_out_1
-      StPeter_in_3: input_1
+      StPeter_in_2: input_1
+      StPeter_in_3: input_2
     out: [StPeter_out_1]
 outputs:
   output_1:

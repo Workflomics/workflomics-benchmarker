@@ -2,6 +2,9 @@
 
 Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem.
 
+## Credits
+
+The `workflomics benchmarker` script was developed by [Nauman Ahmed](@nahmedraja) as part of the [containers](https://github.com/Workflomics/containers) repository, but was since migrated to its own repository (see [PR #49](https://github.com/Workflomics/containers/pull/49)) to be published as a stand-alone package.
 
 ## Requirements
 

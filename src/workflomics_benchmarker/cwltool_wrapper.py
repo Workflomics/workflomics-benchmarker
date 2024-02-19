@@ -1,31 +1,36 @@
 from pathlib import Path
+from typing import List
 import yaml
 import subprocess
 import sys
 
-from benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 class CWLToolWrapper():
-    ''' The class contains the common methods for the benchmarking and running CWL workflows.'''
+    """ The class contains the common methods for the benchmarking and running CWL workflows."""
 
 
     def __init__(self, args):
-        '''Initialize the class'''
+        """Initialize the class"""
         if not Path(args.workflows).is_dir():
             LoggingWrapper.error(f"The path {args.workflows} is not a directory.")
             sys.exit(1)
-        if args.singularity:
+        if hasattr(args, 'singularity') and args.singularity:
             self.container = "singularity"
         else:
             self.container = "docker"
-        if args.outdir is None:
+            
+        if not hasattr(args, 'outdir') or args.outdir is None:
             self.outdir = args.workflows
         else:
             self.outdir = args.outdir
-        if args.input is None:
+
+        if not hasattr(args, 'input') or args.input is None:
             self.input_yaml_path = Path(args.workflows).joinpath('input.yml')
         else:
             self.input_yaml_path = args.input
-        self.verbose = args.verbose
+
+        self.verbose = args.verbose if hasattr(args, 'verbose') else False
+        
         self.workflows = [str(file) for file in Path(args.workflows).glob('*.cwl')]
         self.version = self.check_cwltool()
         self.input = self.update_input_yaml(self.input_yaml_path)
@@ -33,9 +38,10 @@ class CWLToolWrapper():
 
 
     def check_cwltool(self):
-        '''Check if cwltool is installed and return the version'''
+        """Check if cwltool is installed and return the version"""
         try:
             result = subprocess.run(['cwltool', '--version'], capture_output=True, text=True)
+            print(result.stdout)
             version = result.stdout.strip().split()[-1]
             print(f"Using cwltool {version}")
         except FileNotFoundError:
@@ -43,7 +49,7 @@ class CWLToolWrapper():
         return version
 
     def update_input_yaml(self, input_yaml_path):
-        '''Update the input yaml file with the paths to the input files'''
+        """Update the input yaml file with the paths to the input files"""
         inputs = {}
         with open(input_yaml_path, 'r') as file:
             input_data = yaml.safe_load(file)
@@ -62,8 +68,19 @@ class CWLToolWrapper():
             documents = yaml.dump(input_data, file)
         return inputs
 
-    def extract_steps_from_cwl(self, workflow_file):
-        '''Extract the step names from the cwl workflow file'''
+    def extract_steps_from_cwl(self, workflow_file) -> List[str]:
+        """Extract the step (tool) names from the cwl workflow file in the order they are defined.
+        
+        Parameters
+        ----------
+        workflow_file : str
+            The path to the cwl workflow file.
+            
+        Returns
+        -------
+        List[str]
+            The list of step names.
+        """
         with open(workflow_file, 'r') as file:
             data = yaml.safe_load(file)
         steps = []
