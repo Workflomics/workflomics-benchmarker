@@ -2,10 +2,6 @@
 
 Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem.
 
-## Credits
-
-The `workflomics benchmarker` script was developed by [Nauman Ahmed](@nahmedraja) as part of the [containers](https://github.com/Workflomics/containers) repository, but was since migrated to its own repository (see [PR #49](https://github.com/Workflomics/containers/pull/49)) to be published as a stand-alone package.
-
 ## Requirements
 
 - Python 3.9+
@@ -55,3 +51,7 @@ poetry run pytest -s
 ```
 
 The tests will execute a workflow and benchmark it (require Docker running). The results will be stored in the `./tests/data` folder.
+
+## Credits
+
+The `workflomics benchmarker` script was developed by [Nauman Ahmed](@nahmedraja) as part of the [containers](https://github.com/Workflomics/containers) repository, but was since migrated to this repository to be published as a stand-alone package.
