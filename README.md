@@ -1,57 +1,72 @@
 # Workflomics Benchmarker
 
-Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem.
+**Workflomics Benchmarker** is a versatile library designed for executing and benchmarking workflows encapsulated in Common Workflow Language (CWL) within the Workflomics ecosystem.
 
-## Credits
+Detailed user documentation is available on [readthedocs](https://workflomics.readthedocs.io/en/latest/workflomics-benchmarker/benchmarker.html).
 
-The `workflomics benchmarker` script was developed by [Nauman Ahmed](@nahmedraja) as part of the [containers](https://github.com/Workflomics/containers) repository, but was since migrated to its own repository (see [PR #49](https://github.com/Workflomics/containers/pull/49)) to be published as a stand-alone package.
+## Badges
+
+| Description | Badge |
+|:------------|:------|
+| **Packages and Releases** | ![Latest release](https://img.shields.io/github/release/workflomics/workflomics-benchmarker.svg) [![PyPI](https://img.shields.io/pypi/v/workflomics-benchmarker.svg)](https://pypi.python.org/pypi/workflomics-benchmarker/) |
+| **License** | [![GitHub license](https://img.shields.io/github/license/workflomics/workflomics-benchmarker)](https://github.com/workflomics/workflomics-benchmarker/blob/main/LICENSE) |
+<!-- | **DOI** | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7867899.svg)](https://doi.org/10.5281/zenodo.7867899) | -->
+
 
 ## Requirements
 
-- Python 3.9+
-- Poetry
-- Docker or Singularity running
+- Python 3.9 or higher
+- Docker or Singularity
+- Poetry (if you want to build the package from source)
 
 ## Installation
 
+Install `workflomics-benchmarker` from PyPI using pip:
+
 ```bash
+pip install workflomics-benchmarker 
+```
+
+Alternatively, you clone the repository and can install it using Poetry by running:
+
+```bash
+git clone https://github.com/workflomics/workflomics-benchmarker.git
+cd workflomics-benchmarker
 poetry install 
 ```
 
-
 ## Usage
 
-The command is used with Docker or Singularity service running. It will execute the workflow and benchmark it.
+Ensure Docker or Singularity is running before executing workflows. Here are the commands for both services:
 
 ### Docker
 
 ```bash
-workflomics benchmark tests/data/
+workflomics benchmark tests/data/ 
 ```
 
-which is equivalent to
+Or directly with Python:
 
 ```bash
-python src/benchmarker/workflomics.py benchmark tests/data/
+python src/benchmarker/workflomics.py benchmark tests/data/ 
 ```
 
-The results will be stored in the `./tests/data` folder.
-
+The results will be saved in the `./tests/data` directory.
 
 ### Singularity
 
-Finally, you can run the test with Singularity. This will require you to have Singularity installed and running, and to use the `--singularity` flag.
+To use Singularity, ensure it's installed and append the `--singularity` flag:
 
 ```bash
-python src/benchmarker/workflomics.py benchmark tests/data/ --singularity
+python src/benchmarker/workflomics.py benchmark tests/data/ --singularity 
 ```
 
 ## Testing
 
-To run the tests, you can use the following command:
+Run the following command to execute tests:
 
 ```bash
-poetry run pytest -s
+poetry run pytest -s 
 ```
 
-The tests will execute a workflow and benchmark it (require Docker running). The results will be stored in the `./tests/data` folder.
+This command runs a workflow and benchmarks it, assuming Docker is operational. Results are stored in the `./tests/data` directory.

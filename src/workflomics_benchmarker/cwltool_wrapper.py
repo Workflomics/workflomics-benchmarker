@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
+from workflomics_benchmarker.utils import natural_keys
 class CWLToolWrapper():
     """ The class contains the common methods for the benchmarking and running CWL workflows."""
 
@@ -31,10 +32,9 @@ class CWLToolWrapper():
 
         self.verbose = args.verbose if hasattr(args, 'verbose') else False
         
-        self.workflows = [str(file) for file in Path(args.workflows).glob('*.cwl')]
+        self.workflows = sorted([str(file) for file in Path(args.workflows).glob('*.cwl')], key=natural_keys)
         self.version = self.check_cwltool()
         self.input = self.update_input_yaml(self.input_yaml_path)
-
 
 
     def check_cwltool(self):

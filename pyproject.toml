@@ -2,9 +2,9 @@
 name = "workflomics-benchmarker"
 version = "0.1.0"
 description = "Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem."
-authors = ["Nauman Ahmed <n.ahmed@esciencecenter.nl>",
-            "Peter Kok <p.kok@esciencecenter.nl>",
-            "Vedran Kasalica <v.kaslica@esciencecenter.nl>"]
+authors = ["Vedran Kasalica <v.kaslica@esciencecenter.nl>",
+            "Nauman Ahmed <n.ahmed@esciencecenter.nl>",
+            "Peter Kok <p.kok@esciencecenter.nl>"]
 license = "Apache-2.0"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
