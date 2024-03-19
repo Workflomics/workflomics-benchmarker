@@ -9,8 +9,8 @@ Detailed user documentation is available on [readthedocs](https://workflomics.re
 | Description | Badge |
 |:------------|:------|
 | **Packages and Releases** | ![Latest release](https://img.shields.io/github/release/workflomics/workflomics-benchmarker.svg) [![PyPI](https://img.shields.io/pypi/v/workflomics-benchmarker.svg)](https://pypi.python.org/pypi/workflomics-benchmarker/) |
+| **DOI** | [![DOI](https://zenodo.org/badge/749899872.svg)](https://zenodo.org/doi/10.5281/zenodo.10839465) |
 | **License** | [![GitHub license](https://img.shields.io/github/license/workflomics/workflomics-benchmarker)](https://github.com/workflomics/workflomics-benchmarker/blob/main/LICENSE) |
-<!-- | **DOI** | [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7867899.svg)](https://doi.org/10.5281/zenodo.7867899) | -->
 
 
 ## Requirements
