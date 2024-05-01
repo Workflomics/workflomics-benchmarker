@@ -338,6 +338,59 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             step_benchmark.update(tooltip)
             benchmark.append(step_benchmark)
         return benchmark
+    
+    def add_benchmark(self, benchmarks, description, title, unit, key):
+        """
+        Adds a benchmark entry to the provided list.
+
+        Parameters:
+        - benchmarks (list): A list to which the benchmark data will be appended.
+        - description (str): A description of the benchmark.
+        - title (str): The title of the benchmark.
+        - unit (str): The unit of measurement for the benchmark data.
+        - key (str): The key used to fetch and calculate benchmark values from the workflow.
+
+        Example:
+        >>> add_benchmark(benchmarks, "Status for each step in the workflow", "Status", "✓ or ✗", "status")
+        """
+        benchmarks.append({
+            "description": description,
+            "title": title,
+            "unit": unit,
+            "aggregate_value": {
+                "value": self.aggregate_workflow_benchmark_value(key),
+                "desirability": self.calc_desirability(
+                    key, self.aggregate_workflow_benchmark_value(key)
+                ),
+            },
+            "steps": self.get_step_benchmarks(key),
+        })
+
+    def compute_technical_benchmarks(self) -> List[dict]:
+        """
+        Compute the technical benchmarks for the workflow.
+
+        Returns:
+        - List[dict]: A list of technical benchmarks.
+        """
+        technical_benchmarks = []  # Define the "benchmarks" variable
+        self.add_benchmark(technical_benchmarks, "Status for each step in the workflow", "Status", "✓ or ✗", "status")
+        self.add_benchmark(technical_benchmarks, "Execution time for each step in the workflow", "Execution time", "seconds", "time")
+        self.add_benchmark(technical_benchmarks, "Memory usage for each step in the workflow", "Memory usage", "MB", "memory")
+        self.add_benchmark(technical_benchmarks, "The number of identified significantly enriched unique GO-terms.", "GO-terms identified", "count", "warnings")
+        self.add_benchmark(technical_benchmarks, "Warnings for each step in the workflow", "Warnings", "count", "warnings")
+        self.add_benchmark(technical_benchmarks, "Errors for each step in the workflow", "Errors", "count", "errors")
+            
+        return technical_benchmarks
+    
+    def compute_scientific_benchmarks(self) -> List[dict]:
+        """
+        Compute the scientific benchmarks for the workflow.
+
+        Returns:
+        - List[dict]: A list of scientific benchmarks.
+        """
+        benchmarks = []
 
     def run_workflows(self) -> None:
         """Run the workflows in the given directory and store the results in a json file."""
@@ -380,76 +433,24 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
 
             all_workflow_data["workflowName"] = workflow_name
 
-            all_workflow_data["benchmarks"].append(
-                {
-                    "description": "Status for each step in the workflow",
-                    "title": "Status",
-                    "unit": "✓ or ✗",
-                    "aggregate_value": {
-                        "value": str(self.aggregate_workflow_benchmark_value("status")),
-                        "desirability": self.calc_desirability(
-                            "status", self.aggregate_workflow_benchmark_value("status")
-                        ),
-                    },
-                    "steps": self.get_step_benchmarks("status"),
-                }
-            )
-            all_workflow_data["benchmarks"].append(
-                {
-                    "description": "Execution time for each step in the workflow",
-                    "title": "Execution time",
-                    "unit": "seconds",
-                    "aggregate_value": {
-                        "value": self.aggregate_workflow_benchmark_value("time"),
-                        "desirability": self.calc_desirability(
-                            "time", self.aggregate_workflow_benchmark_value("time")
-                        ),
-                    },
-                    "steps": self.get_step_benchmarks("time"),
-                }
-            )
-            all_workflow_data["benchmarks"].append(
-                {
-                    "description": "Memory usage for each step in the workflow",
-                    "title": "Memory usage",
-                    "unit": "MB",
-                    "aggregate_value": {
-                        "value": self.aggregate_workflow_benchmark_value("memory"),
-                        "desirability": self.calc_desirability(
-                            "memory", self.aggregate_workflow_benchmark_value("memory")
-                        ),
-                    },
-                    "steps": self.get_step_benchmarks("memory"),
-                }
-            )
-            all_workflow_data["benchmarks"].append(
-                {
-                    "description": "Warnings for each step in the workflow",
-                    "title": "Warnings",
-                    "unit": "count",
-                    "aggregate_value": {
-                        "value": self.aggregate_workflow_benchmark_value("warnings"),
-                        "desirability": self.calc_desirability(
-                            "warnings", self.aggregate_workflow_benchmark_value("warnings")
-                        ),
-                    },
-                    "steps": self.get_step_benchmarks("warnings"),
-                }
-            )
-            all_workflow_data["benchmarks"].append(
-                {
-                    "description": "Errors for each step in the workflow",
-                    "title": "Errors",
-                    "unit": "count",
-                    "aggregate_value": {
-                        "value": self.aggregate_workflow_benchmark_value("errors"),
-                        "desirability": self.calc_desirability(
-                            "errors", self.aggregate_workflow_benchmark_value("errors")
-                        ),
-                    },
-                    "steps": self.get_step_benchmarks("errors"),
-                }
-            )
+            all_workflow_data["benchmarks"] = self.compute_technical_benchmarks()
+            
+            # # TODO: FInish this
+            # all_workflow_data["benchmarks"].append(
+            #     {
+            #         "description": "The number of identified significantly enriched unique GO-terms.",
+            #         "title": "GO-terms identified",
+            #         "unit": "count",
+            #         "aggregate_value": {
+            #             "value": self.aggregate_workflow_benchmark_value("warnings"),
+            #             "desirability": self.calc_desirability(
+            #                 "warnings", self.aggregate_workflow_benchmark_value("warnings")
+            #             ),
+            #         },
+            #         "steps": self.get_step_benchmarks("warnings"),
+            #     }
+            # )
+
 
             workflows_benchmarks.append(all_workflow_data)
 
