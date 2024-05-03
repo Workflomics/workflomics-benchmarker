@@ -43,7 +43,10 @@ def main():
         op = CWLToolRuntimeBenchmark(args)
     elif (args.subcommand == "run"):
         LoggingWrapper.info("Running Workflows...", color="green", bold=True)
-        op = CWLToolRunner(args)    
+        op = CWLToolRunner(args)
+    elif (args.subcommand == None):
+        parser.print_help()
+        return    
 
     op.run_workflows()
 
