@@ -1,5 +1,6 @@
 import argparse
 
+from sys import platform
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_runtime_benchmark import CWLToolRuntimeBenchmark
 from workflomics_benchmarker.cwltool_runner import CWLToolRunner
@@ -26,6 +27,10 @@ def main():
     """Main entry point for the workflomics_runner application."""
 
     LoggingWrapper.info("Starting workflomics_runner...", color="green", bold=True)
+
+    if platform == "win32":
+        LoggingWrapper.error("This application uses tools that are not supported on Windows natively. To run on Windows, use WSL.", color="red", bold=True)
+        return
 
     parser = argparse.ArgumentParser(description='Wrapper for cwltool command.', epilog='See \'workflomics <subcommand> --help\' for additional information about a specific subcommand.')
     # Adding subparsers for the benchmark and run commands
