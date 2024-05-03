@@ -27,7 +27,7 @@ def main():
 
     LoggingWrapper.info("Starting workflomics_runner...", color="green", bold=True)
 
-    parser = argparse.ArgumentParser(description='Wrapper for cwltool command.')
+    parser = argparse.ArgumentParser(description='Wrapper for cwltool command.', epilog='See \'workflomics <subcommand> --help\' for additional information about a specific subcommand.')
     # Adding subparsers for the benchmark and run commands
     subparsers = parser.add_subparsers(dest='subcommand', help='Subcommands.')
     parser_benchmark = subparsers.add_parser('benchmark', help='Run the benchmark.')
