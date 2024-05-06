@@ -37,7 +37,11 @@ def benchmark_gProfiler(path_to_output: str) -> int:
     go_terms = [item for item in all_terms if regex.search(str(item))]
 
     # Return the number of significantly enriched unique GO-terms:
-    return len(list(set(go_terms)))
+    try:
+        return len(list(set(go_terms)))
+    except (IndexError, TypeError) as e:
+        print(f"Warning: {e}")
+        return 0
 
 
 def benchmark_goenrichment(path_to_output: str) -> int:
@@ -57,8 +61,12 @@ def benchmark_goenrichment(path_to_output: str) -> int:
     go_terms = merged_df.loc[merged_df['p-value'] < 0.001]["GO Term"]
 
     """Count the number of significantly enriched unique GO-terms:"""
-
-    return len(list(set(go_terms)))
+    try:
+        return len(list(set(go_terms)))
+    except (IndexError, TypeError) as e:
+        print(f"Warning: {e}")
+        return 0
+    
 
 
 
@@ -67,7 +75,11 @@ def benchmark_peptideprophet(path_to_output: str) -> int:
     root = tree.getroot()
     namespaces = {'pepxml': 'http://regis-web.systemsbiology.net/pepXML'}
     benchmark = root.xpath('//pepxml:msms_pipeline_analysis/pepxml:analysis_summary/pepxml:peptideprophet_summary/pepxml:roc_error_data[@charge="all"]//pepxml:error_point[@error<=0.01]/@num_corr', namespaces=namespaces)
-    return int(benchmark[len(benchmark)-1])
+    try:
+        return int(benchmark[len(benchmark)-1])
+    except (IndexError, TypeError) as e:
+        print(f"Warning: {e}")
+        return 0
 
     
 def benchmark_proteinprophet(path_to_output: str) -> int:
@@ -77,11 +89,12 @@ def benchmark_proteinprophet(path_to_output: str) -> int:
     root = tree.getroot()
     namespaces = {'protxml': 'http://regis-web.systemsbiology.net/protXML'}
     benchmark = root.xpath('//protxml:protein_summary/protxml:protein_summary_header/protxml:program_details/protxml:proteinprophet_details//protxml:error_point[@error<=0.01]/@num_corr', namespaces=namespaces)
-    return int(benchmark[len(benchmark)-1])
+    try:
+        return int(benchmark[len(benchmark)-1])
+    except (IndexError, TypeError) as e:
+        print(f"Warning: {e}")
+        return 0
 
-
-def compute_benchmarks():
-    print()
 
 
 def calculate_output_file(dir_path, workflow_name, output_name):
