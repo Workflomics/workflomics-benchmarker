@@ -390,14 +390,14 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
 
         technical_benchmarks.append(self.create_benchmark(
             "The number of identified proteins.",
-            "Proteins identified",
+            "Proteins",
             "count",
             "identified_proteins",
         workflow_execution_information))
 
         technical_benchmarks.append(self.create_benchmark(
             "The number of identified significantly enriched unique GO-terms.",
-            "GO-terms identified",
+            "GO-terms",
             "count",
             "go_terms",
         workflow_execution_information))
