@@ -77,7 +77,7 @@ def benchmark_proteinprophet(path_to_output: str) -> int:
     root = tree.getroot()
     namespaces = {'protxml': 'http://regis-web.systemsbiology.net/protXML'}
     benchmark = root.xpath('//protxml:protein_summary/protxml:protein_summary_header/protxml:program_details/protxml:proteinprophet_details//protxml:error_point[@error=0.01]/@num_corr', namespaces=namespaces)
-    print(int(benchmark[0]))
+    return int(benchmark[0])
 
 
 def compute_benchmarks():
@@ -90,22 +90,30 @@ def calculate_output_file(dir_path, workflow_name, output_name):
     """
     return os.path.join(dir_path, workflow_name + "_output", output_name)
 
-dir_path = "/Users/vedran/Library/CloudStorage/OneDrive-NetherlandseScienceCenter/eScience/All Projects/Workflomics/Events/IEEE eScience/runs/demo_gProfiler_big"
-workflows = ["candidate_workflow_1.cwl", "candidate_workflow_3.cwl"]
-output_name = "output.json"
-benchmarks_file = os.path.join(dir_path, "benchmarks.json")
-for workflow in workflows:
-    # Run the benchmarks
-    output_file = calculate_output_file(dir_path, workflow, output_name)
-    benchmark_json = compute_benchmarks(output_file)
-    # Save the results
-    append_to_workflow_benchmark(benchmarks_file, workflow, benchmark_json)
+# dir_path = "/Users/vedran/Library/CloudStorage/OneDrive-NetherlandseScienceCenter/eScience/All Projects/Workflomics/Events/IEEE eScience/runs/demo_gProfiler_big"
+# workflows = ["candidate_workflow_1.cwl", "candidate_workflow_3.cwl"]
+# output_name = "output.json"
+# benchmarks_file = os.path.join(dir_path, "benchmarks.json")
+# for workflow in workflows:
+#     # Run the benchmarks
+#     output_file = calculate_output_file(dir_path, workflow, output_name)
+#     benchmark_json = compute_benchmarks(output_file)
+#     # Save the results
+#     append_to_workflow_benchmark(benchmarks_file, workflow, benchmark_json)
 
-def compute_benchmarks(output_file):
-    # Compute the benchmarks
-    benchmark_results = {}
-    benchmark_results["gProfiler"] = benchmark_gProfiler(output_file)
-    benchmark_results["GOEnrichment"] = benchmark_goenrichment(output_file)
-    benchmark_results["PeptideProphet"] = benchmark_peptideprophet(output_file)
-    benchmark_results["ProteinProphet"] = benchmark_proteinprophet(output_file)
-    return benchmark_results
+# def compute_benchmarks(output_file):
+#     # Compute the benchmarks
+#     benchmark_results = {}
+#     benchmark_results["gProfiler"] = benchmark_gProfiler(output_file)
+#     benchmark_results["GOEnrichment"] = benchmark_goenrichment(output_file)
+#     benchmark_results["PeptideProphet"] = benchmark_peptideprophet(output_file)
+#     benchmark_results["ProteinProphet"] = benchmark_proteinprophet(output_file)
+#     return benchmark_results
+
+
+
+path = "/Users/vedran/Downloads/workflows_to_run/candidate_workflow_comet.cwl_output/2021-10-8_Ecoli.pep.xml"
+
+path2="/Users/vedran/Desktop/tmp/140131.LC2.IT2.XX.P01347_2-C,6_01_5970.pep.xml"
+path3 = "/Users/vedran/Desktop/tmp/mzmlFile.pep.xml"
+print(benchmark_proteinprophet(path3))

@@ -10,15 +10,21 @@ from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
 
 from workflomics_benchmarker.cwl_utils import extract_steps_from_cwl
-from workflomics_benchmarker.benchmark_utils import is_line_useless, create_output_dir, setup_empty_benchmark_for_step
+from workflomics_benchmarker.benchmark_utils import (
+    is_line_useless,
+    create_output_dir,
+    setup_empty_benchmark_for_step,
+    step_success_pattern,
+    step_fail_pattern,
+    set_step_status_to_failed,
+    benchmark_successful_step_execution,
+    benchmark_failed_step_execution
+)
+
+
 class CWLToolRuntimeBenchmark(CWLToolWrapper):
     """Runtime benchmarking class  to gather information about the runtime of each step in a workflow."""
 
-    # pattern to match the success of a step
-    success_pattern = re.compile(r"\[job (.+)\] completed success")  
-    # pattern to match the failure of a step
-    fail_pattern = re.compile(r"\[job (.+)\] completed permanentFail|ERROR Exception on step '([^']+)'") 
-    
     EXECUTION_TIME_DESIRABILITY_BINS = {
         "0-150": 1,
         "151-300": 0.75,
@@ -43,21 +49,24 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
 
     def __init__(self, args):
         super().__init__(args)
-        self.workflow_benchmark_result = {}
 
-
-    def run_workflow(self, workflow) -> None:
-        """Run a workflow and gather information about the runtime of each step.
-
+    def execute_and_benchmark_workflow(self, workflow) -> dict:
+        """
+        Execute a single workflow, save the outputs and benchmark each step, i.e., tool, of the workflow.
+        TODO: Split into execute and benchmark functions.
         Parameters
         ----------
         workflow: str
             The path to the workflow file.
-        
+
         Returns
         -------
-        None
+        dict
+            A dictionary containing the benchmark results of the workflow.
         """
+        workflow_execution_information = {}
+        workflow_name = Path(workflow).name
+
         command = ["cwltool"]
 
         if self.container == "singularity":  # use singularity if the flag is set
@@ -66,16 +75,16 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             )
             command.append("--singularity")
 
-        self.workflow_outdir = create_output_dir(self.outdir, Path(workflow).name)
-        
+        workflow_outdir = create_output_dir(self.outdir, workflow_name)
 
         command.extend(
             [
-                "--on-error", "continue",
+                "--on-error",
+                "continue",
                 "--disable-color",
                 "--timestamps",
                 "--outdir",
-                self.workflow_outdir,
+                workflow_outdir,
                 workflow,
                 self.input_yaml_path,
             ]
@@ -89,144 +98,123 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             text=True,
             encoding="utf-8",
         )  # run the workflow
-        if (self.verbose):
+        if self.verbose:
             print(result.stdout)
         cwltool_output_lines = result.stdout.split("\n")
-        
-        #Set of step names that were executed successfully.
-        successfully_executed_steps = set()  
-        
-        step_results = [
-            setup_empty_benchmark_for_step(tool)
-            for tool in steps
-        ]
 
-        for line in cwltool_output_lines:  # iterate over the output of the workflow and find which steps were executed successfully
-            successfull_match = self.success_pattern.search(line)
-            failed_match = self.fail_pattern.search(line)
-            if successfull_match:
-                successfully_executed_steps.add(successfull_match.group(1))
-            elif failed_match:
-                failed_tool_name = failed_match.group(1) if failed_match.group(1) is not None else failed_match.group(2)
-                for entry in step_results:
-                    # set the benchmark values for the failed steps to N/A
-                    if entry["step"] == failed_tool_name:
-                        entry["status"] = "✗"
-                        entry["time"] = "N/A"
-                        entry["memory"] = "N/A"
-                        entry["warnings"] = "N/A"
-                        entry["errors"] = "N/A"
-        for (
-            step
-        ) in (
-            successfully_executed_steps
-        ):  # iterate over the output of the workflow and find the benchmark values for each step
-            max_memory_step = "N/A"
-            step_start = False
-            warnings_step = []
-            errors_step = []
-            for line in cwltool_output_lines:
-                if f"[step {step}] start" in line:
-                    start_time_step = datetime.datetime.strptime(
-                        line[:21], "[%Y-%m-%d %H:%M:%S]"
+        # Set of step names that were executed successfully.
+        successfully_executed_steps = set()
+        failed_steps = set()
+
+        step_results = [setup_empty_benchmark_for_step(tool) for tool in steps]
+        # iterate over the output of the workflow and find which steps were executed successfully
+        for line in cwltool_output_lines:
+            successful_match = step_success_pattern(line)
+            if successful_match:
+                successfully_executed_steps.add(successful_match.group(1))
+            else:
+                failed_match = step_fail_pattern(line)
+                if failed_match:
+                    failed_tool_name = (
+                        failed_match.group(1)
+                        if failed_match.group(1) is not None
+                        else failed_match.group(2)
                     )
-                    step_start = True
-                elif f"[job {step}] completed success" in line:
-                    end_time_step = datetime.datetime.strptime(
-                        line[:21], "[%Y-%m-%d %H:%M:%S]"
-                    )
-                    break
-                elif step_start:
-                    if f"[job {step}] Max memory used" in line:
-                        max_memory_step = int(
-                            line.split()[-1].rstrip(line.split()[-1][-3:])
-                        )
-                        if line.split()[-1].endswith("GiB"):
-                            max_memory_step = max_memory_step * 1024
-                        if max_memory_step == 0:
-                            max_memory_step = 1
-                    elif "warning" in line.lower():
-                        if not is_line_useless(line):
-                            warnings_step.append(line)
-                    elif "error" in line.lower():
-                        if not is_line_useless(line):
-                            errors_step.append(line)
+                    failed_steps.add(failed_tool_name)
 
-            execution_time_step = int((end_time_step - start_time_step).total_seconds())
-            if execution_time_step == 0:
-                execution_time_step = 1 # set the minimum execution time to 1 second. Decimal values cannot be retrieved from the cwltool output, so the number of seconds is rounded up.
-            for (
-                entry
-            ) in (
-                step_results
-            ):  # store the benchmark values for each successfully executed step
-                if entry["step"] == step:
-                    entry["status"] = "✓"
-                    entry["time"] = execution_time_step
-                    entry["memory"] = max_memory_step
-                    entry["warnings"] = warnings_step
-                    entry["errors"] = errors_step
-
+        # iterate over the output of the workflow and find the benchmark values for each step
+        step_results = benchmark_successful_step_execution(successfully_executed_steps, cwltool_output_lines, step_results, workflow_outdir)
+        step_results = benchmark_failed_step_execution(failed_steps, cwltool_output_lines, step_results)
         workflow_status = "✓"
         for entry in step_results:  # check if the workflow was executed successfully
             if entry["status"] == "✗" or entry["status"] == "-":
                 workflow_status = "✗"
                 break
 
-        self.workflow_benchmark_result = {
+        workflow_execution_information = {
             "n_steps": len(steps),
             "status": workflow_status,
             "steps": step_results,
         }
 
-    def aggregate_workflow_benchmark_value(self, benchmark_name) -> int | Literal["✗", "N/A"]:
+        LoggingWrapper.info(
+                "Benchmarking " + workflow_name + " completed.", color="green"
+            )
+
+        return workflow_execution_information
+
+    def count_successful_steps(self, all_tools_exe) -> int:
+        """Count the number of steps that were executed successfully.
+
+        Parameters
+        ----------
+        step_results: List[dict]
+            The list of step results.
+
+        Returns
+        -------
+        int
+            The number of steps that were executed successfully.
+        """
+        return len([tool_execution for tool_execution in all_tools_exe if tool_execution["status"] == "✓"])
+    
+
+    def aggregate_workflow_benchmark_value(
+        self, benchmark_name, workflow_execution_information
+    ) -> int | Literal["✗", "N/A"]:
         """Calculate the aggregate benchmark value for the given workflow.
 
         Parameters
         ----------
         benchmark_name: str
             The name of the benchmark to calculate.
-        
+
         Returns
         -------
         value: int | Literal["✗", "N/A"]
             The value of the benchmark.
         """
         value: int = 0
-        for index, entry in enumerate(self.workflow_benchmark_result["steps"], start=1):
+        for tool_execution in workflow_execution_information["steps"]:
             match benchmark_name:
                 case "status":
-                    if entry[benchmark_name] != "✗" and entry[benchmark_name] != "-":
+                    if tool_execution[benchmark_name] != "✗" and tool_execution[benchmark_name] != "-":
                         value = "✓"
                     else:
-                        return  f"({index-1}/{len(self.workflow_benchmark_result['steps'])}) ✗"
+                        return f"({self.count_successful_steps(workflow_execution_information['steps'])}/{len(workflow_execution_information['steps'])}) ✗"
                 case "time":
-                    if entry[benchmark_name] != "N/A":
-                        value = value + entry["time"]
-                    else:
-                        return "N/A"
+                    if tool_execution[benchmark_name] != "-":
+                        value = value + tool_execution[benchmark_name]
+                    # else:
+                    #     return "N/A"
                 case "memory":
-                    if entry[benchmark_name] != "N/A":
+                    if tool_execution[benchmark_name] != "-":
                         # remove last 3 characters from string (MiB, GiB, etc.)
-                        value = max(value, entry["memory"])
-                    else:
-                        return "N/A"
+                        value = max(value, tool_execution["memory"])
+                    # else:
+                    #     return "N/A"
                 case "warnings":
-                    value = value + len(entry["warnings"])
+                    value = value + len(tool_execution["warnings"])
                 case "errors":
-                    value = value + len(entry["errors"])
+                    value = value + len(tool_execution["errors"])
+                case "go_terms":
+                    if tool_execution[benchmark_name] != "-":
+                        value = value + tool_execution[benchmark_name]
+                case "identified_proteins":
+                    if tool_execution[benchmark_name] != "-":
+                        value = value + tool_execution[benchmark_name]
         return value
 
-    def calc_desirability(self, benchmark_name, value):
+    def calc_desirability(self, benchmark_name, value, status="✓"):
         """Calculate the desirability for the given benchmark value.
-        
+
         Parameters
         ----------
         benchmark_name: str
             The name of the benchmark.
         value: int
             The value of the benchmark.
-        
+
         Returns
         -------
         float
@@ -245,17 +233,34 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                     value = len(value)
                 return 0 if value == 0 else -1
             case "time":
-                if value == "N/A":
+                if value == "-":
                     return 0
+                elif status == "✗":
+                    return -1
                 bins = self.EXECUTION_TIME_DESIRABILITY_BINS
             case "memory":
-                if value == "N/A":
+                if value == "-":
                     return 0
+                elif status == "✗":
+                    return -1
                 bins = self.MAX_MEMORY_DESIRABILITY_BINS
             case "warnings":
                 bins = self.WARNINGS_DESIRABILITY_BINS
                 if isinstance(value, list):
                     value = len(value)
+            case "go_terms":
+                if value == "-":
+                    return 0
+                if value == 0 or value > 1000:
+                    return -1
+                return 1
+            case "identified_proteins":
+                if value == "-":
+                    return 0
+                if value == 0 or value > 1000:
+                    return -1
+                return 1
+
         for key, value in bins.items():
             if "-" in key:
                 if value <= int(key.split("-")[1]):
@@ -264,14 +269,14 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 return bins[key]
         return 0
 
-    def get_step_benchmarks(self, name) -> List[dict]:
+    def get_step_benchmarks(self, name, workflow_execution_information) -> List[dict]:
         """Get benchmark data for all the steps of the workflow for the given benchmark.
-        
+
         Parameters
         ----------
         name: str
             The name of the benchmark.
-        
+
         Returns
         -------
         List[dict]
@@ -279,9 +284,9 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         """
         benchmark = []
         # iterate over the steps and store the benchmark values for each step
-        for entry in self.workflow_benchmark_result["steps"]:
+        for entry in workflow_execution_information["steps"]:
             # each step 'entry' is either having a numeric value, or is "N/A" in case it was not executed. Special case are the status entries, which are either "✓", "✗" or "-" (when not reached).
-            val = (entry[name])
+            val = entry[name]
             tooltip = {}
             if name == "errors" or name == "warnings":
                 if (val) != "N/A" and len(entry[name]) > 0:
@@ -289,50 +294,58 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                     val = len(entry[name])
                 else:
                     val = 0
-                
+
             step_benchmark = {
                 "label": entry["step"].rstrip(
                     "_0123456789"
                 ),  # Label the step without the number at the end
                 "value": val,
                 "desirability": (
-                    -1
-                    if entry["status"] == "✗"
-                    else self.calc_desirability(name, val)
+                    -1 if entry["status"] == "✗" else self.calc_desirability(name, val)
                 ),
             }
             step_benchmark.update(tooltip)
             benchmark.append(step_benchmark)
         return benchmark
-    
-    def add_benchmark(self, benchmarks, description, title, unit, key):
+
+    def create_benchmark(self, description, title, unit, key, workflow_execution_information) -> dict:
         """
-        Adds a benchmark entry to the provided list.
+        Create a benchmark json entry.
 
-        Parameters:
-        - benchmarks (list): A list to which the benchmark data will be appended.
-        - description (str): A description of the benchmark.
-        - title (str): The title of the benchmark.
-        - unit (str): The unit of measurement for the benchmark data.
-        - key (str): The key used to fetch and calculate benchmark values from the workflow.
+        Parameters
+        ----------
+        benchmarks : list
+            A list to which the benchmark data will be appended.
+        description : str
+            A description of the benchmark.
+        title : str
+            The title of the benchmark.
+        unit : str
+            The unit of measurement for the benchmark data.
+        key : str
+            The key used to fetch and calculate benchmark values from the workflow.
+        
+        Returns
+        -------
+        dict
+            A dictionary containing the benchmark data.
 
-        Example:
-        >>> add_benchmark(benchmarks, "Status for each step in the workflow", "Status", "✓ or ✗", "status")
         """
-        benchmarks.append({
-            "description": description,
-            "title": title,
-            "unit": unit,
-            "aggregate_value": {
-                "value": self.aggregate_workflow_benchmark_value(key),
-                "desirability": self.calc_desirability(
-                    key, self.aggregate_workflow_benchmark_value(key)
-                ),
-            },
-            "steps": self.get_step_benchmarks(key),
-        })
+        return {
+                "description": description,
+                "title": title,
+                "unit": unit,
+                "aggregate_value": {
+                    "value": self.aggregate_workflow_benchmark_value(key, workflow_execution_information),
+                    "desirability": self.calc_desirability(
+                        key, self.aggregate_workflow_benchmark_value(key, workflow_execution_information), workflow_execution_information["status"]
+                    ),
+                },
+                "steps": self.get_step_benchmarks(key, workflow_execution_information),
+            }
+        
 
-    def compute_technical_benchmarks(self) -> List[dict]:
+    def compute_technical_benchmarks(self,workflow_execution_information) -> List[dict]:
         """
         Compute the technical benchmarks for the workflow.
 
@@ -340,23 +353,57 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         - List[dict]: A list of technical benchmarks.
         """
         technical_benchmarks = []  # Define the "benchmarks" variable
-        self.add_benchmark(technical_benchmarks, "Status for each step in the workflow", "Status", "✓ or ✗", "status")
-        self.add_benchmark(technical_benchmarks, "Execution time for each step in the workflow", "Execution time", "seconds", "time")
-        self.add_benchmark(technical_benchmarks, "Memory usage for each step in the workflow", "Memory usage", "MB", "memory")
-        self.add_benchmark(technical_benchmarks, "The number of identified significantly enriched unique GO-terms.", "GO-terms identified", "count", "warnings")
-        self.add_benchmark(technical_benchmarks, "Warnings for each step in the workflow", "Warnings", "count", "warnings")
-        self.add_benchmark(technical_benchmarks, "Errors for each step in the workflow", "Errors", "count", "errors")
-            
-        return technical_benchmarks
-    
-    def compute_scientific_benchmarks(self) -> List[dict]:
-        """
-        Compute the scientific benchmarks for the workflow.
+        technical_benchmarks.append(self.create_benchmark(
+            "Status for each step in the workflow",
+            "Status",
+            "✓ or ✗",
+            "status",
+        workflow_execution_information))
 
-        Returns:
-        - List[dict]: A list of scientific benchmarks.
-        """
-        benchmarks = []
+        technical_benchmarks.append(self.create_benchmark(
+            "Execution time for each step in the workflow",
+            "Execution time",
+            "seconds",
+            "time",
+        workflow_execution_information))
+        
+        technical_benchmarks.append(self.create_benchmark(
+            "Memory usage for each step in the workflow",
+            "Memory usage",
+            "MB",
+            "memory",
+        workflow_execution_information))
+
+        technical_benchmarks.append(self.create_benchmark(
+            "Warnings for each step in the workflow",
+            "Warnings",
+            "count",
+            "warnings",
+        workflow_execution_information))
+
+        technical_benchmarks.append(self.create_benchmark(
+            "Errors for each step in the workflow",
+            "Errors",
+            "count",
+            "errors",
+        workflow_execution_information))
+
+        # technical_benchmarks.append(self.create_benchmark(
+        #     "The number of identified proteins.",
+        #     "Proteins identified",
+        #     "count",
+        #     "identified_proteins",
+        # workflow_execution_information))
+
+        technical_benchmarks.append(self.create_benchmark(
+            "The number of identified significantly enriched unique GO-terms.",
+            "GO-terms identified",
+            "count",
+            "go_terms",
+        workflow_execution_information))
+
+        return technical_benchmarks
+
 
     def run_workflows(self) -> None:
         """Run the workflows in the given directory and store the results in a json file."""
@@ -369,10 +416,9 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         ) in self.workflows:  # iterate over the workflows and execute them
             workflow_name = Path(workflow_path).name
             LoggingWrapper.info("Benchmarking " + workflow_name + "...", color="green")
-            self.run_workflow(workflow_path)
-            if (
-                self.workflow_benchmark_result["status"] == "✗"
-            ):  # check if the workflow was executed successfully
+            workflow_execution_information = self.execute_and_benchmark_workflow(workflow_path)
+            
+            if (workflow_execution_information["status"] == "✗"): 
                 LoggingWrapper.error(workflow_name + " failed")
                 failed_workflows.append(workflow_name)
             else:
@@ -380,43 +426,17 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                     workflow_name + " finished successfully.", color="green"
                 )
                 success_workflows.append(workflow_name)
-            LoggingWrapper.info(
-                f"Output of {workflow_name} is stored in {self.workflow_outdir}. It may be empty if the workflow failed."
-            )
-            LoggingWrapper.info(
-                "Benchmarking " + workflow_name + " completed.", color="green"
-            )
+            
             # store the benchmark results for each workflow in a json file
             all_workflow_data = {
-                "workflowName": "",
+                "workflowName": workflow_name,
                 "executor": "cwltool " + self.version,
                 "runID": "39eddf71ea1700672984653",
                 "inputs": {
                     key: {"filename": self.input[key]["filename"]} for key in self.input
                 },
-                "benchmarks": [],
+                "benchmarks": self.compute_technical_benchmarks(workflow_execution_information),
             }
-
-            all_workflow_data["workflowName"] = workflow_name
-
-            all_workflow_data["benchmarks"] = self.compute_technical_benchmarks()
-            
-            # # TODO: FInish this
-            # all_workflow_data["benchmarks"].append(
-            #     {
-            #         "description": "The number of identified significantly enriched unique GO-terms.",
-            #         "title": "GO-terms identified",
-            #         "unit": "count",
-            #         "aggregate_value": {
-            #             "value": self.aggregate_workflow_benchmark_value("warnings"),
-            #             "desirability": self.calc_desirability(
-            #                 "warnings", self.aggregate_workflow_benchmark_value("warnings")
-            #             ),
-            #         },
-            #         "steps": self.get_step_benchmarks("warnings"),
-            #     }
-            # )
-
 
             workflows_benchmarks.append(all_workflow_data)
 

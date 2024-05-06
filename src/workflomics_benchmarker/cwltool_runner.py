@@ -73,7 +73,7 @@ class CWLToolRunner(CWLToolWrapper):
             LoggingWrapper.error(f"Workflow {workflow_name} failed.", color="red")
             return False
 
-    def run_workflow(self, workflow_path):
+    def execute_workflow(self, workflow_path):
         """
         Execute a single workflow using specified parameters and log the result.
 
@@ -95,6 +95,6 @@ class CWLToolRunner(CWLToolWrapper):
         Execute all specified workflows and summarize the results.
         """
         for workflow_path in self.workflows:
-            self.run_workflow(workflow_path)
+            self.execute_workflow(workflow_path)
         total_workflows = len(self.success_workflows) + len(self.failed_workflows)
         LoggingWrapper.info(f"Execution summary: {total_workflows} total, {len(self.success_workflows)} succeeded, {len(self.failed_workflows)} failed.")
