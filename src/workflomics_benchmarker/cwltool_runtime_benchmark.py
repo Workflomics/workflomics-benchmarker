@@ -9,16 +9,16 @@ from typing import Dict, List, Literal
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
 
-
+from workflomics_benchmarker.cwl_utils import extract_steps_from_cwl
+from workflomics_benchmarker.benchmark_utils import is_line_useless, create_output_dir, setup_empty_benchmark_for_step
 class CWLToolRuntimeBenchmark(CWLToolWrapper):
     """Runtime benchmarking class  to gather information about the runtime of each step in a workflow."""
 
-    KNOWN_USELESS_WARNINGS_ERRORS = [
-        "WARNING: The requested image's platform",
-        " 0 errors",
-        "Calculating sensitivity...and error tables...",
-        " 0 warnings",
-    ]
+    # pattern to match the success of a step
+    success_pattern = re.compile(r"\[job (.+)\] completed success")  
+    # pattern to match the failure of a step
+    fail_pattern = re.compile(r"\[job (.+)\] completed permanentFail|ERROR Exception on step '([^']+)'") 
+    
     EXECUTION_TIME_DESIRABILITY_BINS = {
         "0-150": 1,
         "151-300": 0.75,
@@ -46,25 +46,6 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         self.workflow_benchmark_result = {}
 
 
-    def is_line_useless(self, line):
-        """Check if a line is useless for the benchmarking.
-        
-        Parameters
-        ----------
-        line: str
-            The line to check.
-        
-        Returns
-        -------
-        bool
-            True if the line is useless, False otherwise.
-        
-        """
-        for useless in self.KNOWN_USELESS_WARNINGS_ERRORS:
-            if useless in line:
-                return True
-        return False
-
     def run_workflow(self, workflow) -> None:
         """Run a workflow and gather information about the runtime of each step.
 
@@ -85,14 +66,12 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             )
             command.append("--singularity")
 
-        self.workflow_outdir = os.path.join(
-            self.outdir, Path(workflow).name + "_output"
-        )  # create the output directory for the workflow
-        Path(self.workflow_outdir).mkdir(
-            exist_ok=True
-        )  # create the output directory for the workflow
+        self.workflow_outdir = create_output_dir(self.outdir, Path(workflow).name)
+        
+
         command.extend(
             [
+                "--on-error", "continue",
                 "--disable-color",
                 "--timestamps",
                 "--outdir",
@@ -101,7 +80,8 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 self.input_yaml_path,
             ]
         )  # add the required option in cwltool to disable color and timestamps to enable benchmarking
-        steps = self.extract_steps_from_cwl(workflow)
+        steps = extract_steps_from_cwl(workflow)
+
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
@@ -109,37 +89,23 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             text=True,
             encoding="utf-8",
         )  # run the workflow
-        if self.verbose:
+        if (self.verbose):
             print(result.stdout)
-        output_lines = result.stdout.split("\n")
-        success_pattern = re.compile(
-            r"\[job (.+)\] completed success"
-        )  # pattern to match the success of a step
-        fail_pattern = re.compile(
-            r"\[job (.+)\] completed permanentFail|ERROR Exception on step '([^']+)'"
-        )  # pattern to match the failure of a step
-        success_steps = set()  #Set of step names that were executed successfully.
+        cwltool_output_lines = result.stdout.split("\n")
+        
+        #Set of step names that were executed successfully.
+        successfully_executed_steps = set()  
+        
         step_results = [
-            {
-                "step": step,
-                "status": "-",
-                "time": "N/A",
-                "memory": "N/A",
-                "warnings": "N/A",
-                "errors": "N/A",
-            }
-            for step in steps
+            setup_empty_benchmark_for_step(tool)
+            for tool in steps
         ]
 
-        for (
-            line
-        ) in (
-            output_lines
-        ):  # iterate over the output of the workflow and find which steps were executed successfully
-            successfull_match = success_pattern.search(line)
-            failed_match = fail_pattern.search(line)
+        for line in cwltool_output_lines:  # iterate over the output of the workflow and find which steps were executed successfully
+            successfull_match = self.success_pattern.search(line)
+            failed_match = self.fail_pattern.search(line)
             if successfull_match:
-                success_steps.add(successfull_match.group(1))
+                successfully_executed_steps.add(successfull_match.group(1))
             elif failed_match:
                 failed_tool_name = failed_match.group(1) if failed_match.group(1) is not None else failed_match.group(2)
                 for entry in step_results:
@@ -153,13 +119,13 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         for (
             step
         ) in (
-            success_steps
+            successfully_executed_steps
         ):  # iterate over the output of the workflow and find the benchmark values for each step
             max_memory_step = "N/A"
             step_start = False
             warnings_step = []
             errors_step = []
-            for line in output_lines:
+            for line in cwltool_output_lines:
                 if f"[step {step}] start" in line:
                     start_time_step = datetime.datetime.strptime(
                         line[:21], "[%Y-%m-%d %H:%M:%S]"
@@ -180,10 +146,10 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                         if max_memory_step == 0:
                             max_memory_step = 1
                     elif "warning" in line.lower():
-                        if not self.is_line_useless(line):
+                        if not is_line_useless(line):
                             warnings_step.append(line)
                     elif "error" in line.lower():
-                        if not self.is_line_useless(line):
+                        if not is_line_useless(line):
                             errors_step.append(line)
 
             execution_time_step = int((end_time_step - start_time_step).total_seconds())

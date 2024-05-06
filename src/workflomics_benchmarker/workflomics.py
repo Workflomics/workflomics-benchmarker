@@ -23,9 +23,9 @@ def add_run_args(parser):
    
 
 def main():
-    """Main entry point for the workflomics_runner application."""
+    """Main entry point for the workflomics-benchmarker application."""
 
-    LoggingWrapper.info("Starting workflomics_runner...", color="green", bold=True)
+    LoggingWrapper.info("Starting workflomics-benchmarker...", color="green", bold=True)
 
     parser = argparse.ArgumentParser(description='Wrapper for cwltool command.')
     # Adding subparsers for the benchmark and run commands

@@ -17,6 +17,8 @@ readme = "README.md"
 python = "^3.9"
 pyyaml = "^6.0"
 cwltool= "^3.1"
+jsonpath-ng = "^1.6.1"
+pandas = "^2.2.2"
 
 [tool.poetry.dev-dependencies]
 cwltool= "^3.1"
