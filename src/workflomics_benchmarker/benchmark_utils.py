@@ -72,7 +72,7 @@ def setup_empty_benchmark_for_step(step_name: str) -> dict:
         "memory": "-",
         "warnings": "",
         "errors": "",
-        # "identified_proteins": "-",
+        "identified_proteins": "-",
         "go_terms": "-",
 
     }
@@ -153,11 +153,11 @@ def benchmark_successful_step_execution(successfully_executed_steps: List[str], 
         if "gprofiler" in step.lower():
             count_goterms = benchmark_gProfiler(workflow_outdir + "/output.json")
 
-        # count_identified_proteins = "-"
-        # files_with_extension = list(Path(workflow_outdir).glob('*.pep.xml'))
-        # first_file = files_with_extension[0] if files_with_extension else None
-        # if "proteinprophet" in step.lower() and first_file:
-        #     count_identified_proteins = benchmark_proteinprophet(workflow_outdir + "/" + first_file.name)
+        count_identified_proteins = "-"
+        files_with_extension = list(Path(workflow_outdir).glob('*.prot.xml'))
+        first_file = files_with_extension[0] if files_with_extension else None
+        if "proteinprophet" in step.lower() and first_file:
+            count_identified_proteins = benchmark_proteinprophet(workflow_outdir + "/" + first_file.name)
 
         # set the minimum execution time to 1 second. Decimal values cannot be retrieved from the cwltool output, so the number of seconds is rounded up.
         execution_time_step = int((end_time_step - start_time_step).total_seconds())
@@ -170,7 +170,7 @@ def benchmark_successful_step_execution(successfully_executed_steps: List[str], 
                 entry["memory"] = max(1, max_memory_step)
                 entry["warnings"] = warnings_step
                 entry["errors"] = errors_step
-                # entry["identified_proteins"] = count_identified_proteins
+                entry["identified_proteins"] = count_identified_proteins
                 entry["go_terms"] = count_goterms
     return step_results
 

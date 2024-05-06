@@ -66,8 +66,8 @@ def benchmark_peptideprophet(path_to_output: str) -> int:
     tree = etree.parse(path_to_output) # the PeptideProphet output, regardless of search engine (Comet, X!Tandem), e.g., 'interact.pep.xml'
     root = tree.getroot()
     namespaces = {'pepxml': 'http://regis-web.systemsbiology.net/pepXML'}
-    benchmark = root.xpath('//pepxml:msms_pipeline_analysis/pepxml:analysis_summary/pepxml:peptideprophet_summary/pepxml:roc_error_data[@charge="all"]//pepxml:error_point[@error=0.01]/@num_corr', namespaces=namespaces)
-    return int(benchmark[0])
+    benchmark = root.xpath('//pepxml:msms_pipeline_analysis/pepxml:analysis_summary/pepxml:peptideprophet_summary/pepxml:roc_error_data[@charge="all"]//pepxml:error_point[@error<=0.01]/@num_corr', namespaces=namespaces)
+    return int(benchmark[len(benchmark)-1])
 
     
 def benchmark_proteinprophet(path_to_output: str) -> int:
@@ -76,8 +76,8 @@ def benchmark_proteinprophet(path_to_output: str) -> int:
     tree = etree.parse(path_to_output) # the ProteinProphet output, regardless of search engine (Comet, X!Tandem), e.g., 'interact.prot.xml'
     root = tree.getroot()
     namespaces = {'protxml': 'http://regis-web.systemsbiology.net/protXML'}
-    benchmark = root.xpath('//protxml:protein_summary/protxml:protein_summary_header/protxml:program_details/protxml:proteinprophet_details//protxml:error_point[@error=0.01]/@num_corr', namespaces=namespaces)
-    return int(benchmark[0])
+    benchmark = root.xpath('//protxml:protein_summary/protxml:protein_summary_header/protxml:program_details/protxml:proteinprophet_details//protxml:error_point[@error<=0.01]/@num_corr', namespaces=namespaces)
+    return int(benchmark[len(benchmark)-1])
 
 
 def compute_benchmarks():
@@ -112,8 +112,8 @@ def calculate_output_file(dir_path, workflow_name, output_name):
 
 
 
-path = "/Users/vedran/Downloads/workflows_to_run/candidate_workflow_comet.cwl_output/2021-10-8_Ecoli.pep.xml"
+# path = "/Users/vedran/Downloads/workflows_to_run/candidate_workflow_comet.cwl_output/output_proteinprophet.prot.xml"
 
-path2="/Users/vedran/Desktop/tmp/140131.LC2.IT2.XX.P01347_2-C,6_01_5970.pep.xml"
-path3 = "/Users/vedran/Desktop/tmp/mzmlFile.pep.xml"
-print(benchmark_proteinprophet(path3))
+# path2="/Users/vedran/Desktop/tmp/140131.LC2.IT2.XX.P01347_2-C,6_01_5970.pep.xml"
+# path3 = "/Users/vedran/Desktop/tmp/mzmlFile.pep.xml"
+# print(benchmark_proteinprophet(path))
