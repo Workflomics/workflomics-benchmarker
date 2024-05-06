@@ -188,7 +188,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                     # else:
                     #     return "N/A"
                 case "memory":
-                    if tool_execution[benchmark_name] != "-":
+                    if tool_execution["memory"] not in ["-", "N/A"]:
                         # remove last 3 characters from string (MiB, GiB, etc.)
                         value = max(value, tool_execution["memory"])
                     # else:

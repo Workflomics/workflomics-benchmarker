@@ -121,7 +121,7 @@ def benchmark_successful_step_execution(successfully_executed_steps: List[str], 
     all_errors = []
     all_warnings = []
     for step in successfully_executed_steps:
-        max_memory_step = "N/A"
+        max_memory_step = "-"
         step_start = False
         warnings_step = []
         errors_step = []
@@ -194,16 +194,11 @@ def benchmark_failed_step_execution(failed_steps: List[str], cwltool_output_line
         warnings_step = []
         errors_step = []
         for line in cwltool_output_lines:
-            if f"[step {step}] start" in line:
+            if not step_start and f"[step {step}] start" in line:
                 start_time_step = datetime.datetime.strptime(
                     line[:21], "[%Y-%m-%d %H:%M:%S]"
                 )
                 step_start = True
-            elif f"[job {step}] completed permanentFail" in line:
-                end_time_step = datetime.datetime.strptime(
-                    line[:21], "[%Y-%m-%d %H:%M:%S]"
-                )
-                break
             elif step_start:
                 if f"[job {step}] Max memory used" in line:
                     max_memory_step = int(
@@ -211,12 +206,18 @@ def benchmark_failed_step_execution(failed_steps: List[str], cwltool_output_line
                     )
                     if line.split()[-1].endswith("GiB"):
                         max_memory_step = max_memory_step * 1024
+                    max_memory_step = max(1, max_memory_step)
                 elif "warning" in line.lower():
                     if not is_line_useless(line):
                         warnings_step.append(line)
                 elif "error" in line.lower():
                     if not is_line_useless(line):
                         errors_step.append(line)
+                if f"[job {step}] completed permanentFail" in line or f"ERROR [step {step}]" in line:
+                    end_time_step = datetime.datetime.strptime(
+                        line[:21], "[%Y-%m-%d %H:%M:%S]"
+                    )
+                    break
 
         all_errors.extend(errors_step)
         all_warnings.extend(warnings_step)
@@ -229,7 +230,7 @@ def benchmark_failed_step_execution(failed_steps: List[str], cwltool_output_line
             if entry["step"] == step:
                 entry["status"] = "✗"
                 entry["time"] = max(1, execution_time_step)
-                entry["memory"] = max(1, max_memory_step)
+                entry["memory"] = max_memory_step
                 entry["warnings"] = warnings_step
                 entry["errors"] = errors_step
     return step_results
