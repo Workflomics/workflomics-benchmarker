@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: 'Workflomics: Bioinformatics Workflow Generation and Benchmarking'
+title: 'Workflomics Benchmarker: Executing and Benchmarking CWL Workflows'
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -32,19 +32,14 @@ authors:
     orcid: 'https://orcid.org/0000-0002-5865-8994'
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.10047136
+    value: 10.5281/zenodo.10839466
 repository-code: 'https://github.com/workflomics/workflomics-frontend'
 url: 'https://github.com/workflomics/workflomics-frontend'
 abstract: >-
-  The Workflomics platform aims to address the challenge faced by life science researchers who work with increasingly large and complex datasets and struggle to create optimal workflows for their data analysis problems.
+  Workflomics Benchmarker is a library designed for executing and benchmarking workflows provided in Common Workflow Language (CWL) within the Workflomics ecosystem.
 
-  The platform facilitates a "Great Bake Off" of computational workflows in bioinformatics by integrating bioinformatics tools and metadata with technologies for automated workflow exploration and benchmarking. This enables a systematic and rigorous approach to the development of cutting-edge workflows, specifically in the field of proteomics, to increase scientific quality, robustness, reproducibility, FAIRness, and maintainability.
-
-  The platform currently focuses on the proteomics domain. We aim to extend the platform to additional domains, e.g., metabolomics, genomics.
 keywords:
   - bioinformatics
   - workflow benchmarking
+  - workflow execution
 license: Apache-2.0
-commit: bb02154d29104b2667006e12d37239a3d382b75d
-version: 0.1.1
-date-released: '2023-11-12'
