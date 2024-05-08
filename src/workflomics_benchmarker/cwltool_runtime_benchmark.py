@@ -1,10 +1,8 @@
 import subprocess
 from pathlib import Path
 import os
-import re
-import datetime
 import json
-from typing import Dict, List, Literal
+from typing import List, Literal
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper

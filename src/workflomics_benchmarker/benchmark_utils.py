@@ -1,16 +1,12 @@
-import subprocess
 from pathlib import Path
 import os
+
 import re
 import datetime
-import json
-from typing import Dict, List, Literal
+from typing import List
 
 from workflomics_benchmarker.scientific_benchmarks import benchmark_gProfiler, benchmark_proteinprophet
 
-import jsonpath_ng.ext
-
-from lxml import etree
 
 def create_output_dir(dir_path: str, workflow_name: str) -> str:
     """
@@ -29,7 +25,7 @@ def create_output_dir(dir_path: str, workflow_name: str) -> str:
         The path to the output directory.
     """
     # create the output directory for the workflow
-    workflow_outdir = os.path.join(dir_path, workflow_name + "_output")
+    workflow_outdir = os.path.join(dir_path, workflow_name.removesuffix(".cwl") + "_output")
 
     Path(workflow_outdir).mkdir(exist_ok=True)
 
@@ -118,8 +114,6 @@ def benchmark_successful_step_execution(successfully_executed_steps: List[str], 
     workflow_outdir : str
         The path to the output directory for the workflow.
     """
-    all_errors = []
-    all_warnings = []
     for step in successfully_executed_steps:
         max_memory_step = "-"
         step_start = False

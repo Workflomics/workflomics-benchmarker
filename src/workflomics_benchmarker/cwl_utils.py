@@ -1,8 +1,5 @@
-from pathlib import Path
 from typing import List
 import yaml
-import subprocess
-import sys
 
 def extract_steps_from_cwl(workflow_file) -> List[str]:
         """Extract the step (tool) names from the cwl workflow file in the order they are defined.
