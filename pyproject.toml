@@ -14,21 +14,17 @@ classifiers = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.13"
 pyyaml = "^6.0"
 cwltool= "^3.1"
 jsonpath-ng = "^1.6.1"
 pandas = "^2.2.2"
-
-[tool.poetry.dev-dependencies]
-cwltool= "^3.1"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.27.1"
 pytest = "^7.4.3"
 pytest-datadir = "^1.5.0"
 pytest-cov = "^4.1.0"
-cwltool= "^3.1"
 
 [tool.poetry.scripts]
 workflomics = "workflomics_benchmarker.workflomics:main"
