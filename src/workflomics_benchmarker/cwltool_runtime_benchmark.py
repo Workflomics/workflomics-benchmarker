@@ -183,14 +183,10 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
                 case "time":
                     if tool_execution[benchmark_name] != "-":
                         value = value + tool_execution[benchmark_name]
-                    # else:
-                    #     return "N/A"
                 case "memory":
                     if tool_execution["memory"] not in ["-", "N/A"]:
                         # remove last 3 characters from string (MiB, GiB, etc.)
                         value = max(value, tool_execution["memory"])
-                    # else:
-                    #     return "N/A"
                 case "warnings":
                     value = value + len(tool_execution["warnings"])
                 case "errors":
