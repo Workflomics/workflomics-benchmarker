@@ -24,9 +24,9 @@ def add_run_args(parser):
    
 
 def main():
-    """Main entry point for the workflomics_runner application."""
+    """Main entry point for the workflomics-benchmarker application."""
 
-    LoggingWrapper.info("Starting workflomics_runner...", color="green", bold=True)
+    LoggingWrapper.info("Starting workflomics-benchmarker...", color="green", bold=True)
 
     if platform == "win32":
         LoggingWrapper.error("This application uses tools that are not supported on Windows natively. To run on Windows, use WSL.", color="red", bold=True)
