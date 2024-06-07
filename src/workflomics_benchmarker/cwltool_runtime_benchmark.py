@@ -2,6 +2,10 @@ import subprocess
 from pathlib import Path
 import os
 import json
+import re
+import yaml
+import tempfile
+
 from typing import List, Literal
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
@@ -398,6 +402,59 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
 
         return technical_benchmarks
 
+    
+    def append_to_yaml_file(self, original_file_path):
+        # Load the existing YAML data
+        with open(original_file_path, 'r') as file:
+            data = yaml.safe_load(file)
+
+        # Find a key in the 'steps' dictionary that matches 'ProteinProphet_NN'
+        protein_prophet_key = None
+        if 'steps' in data and isinstance(data['steps'], dict):
+            for key in data['steps'].keys():
+                if re.match(r'ProteinProphet_\d+', key):
+                    protein_prophet_key = key
+                    break
+
+        if protein_prophet_key is None:
+            return original_file_path
+
+        # Find the highest 'output_X' key in the 'outputs' dictionary
+        max_output_number = 0
+        if 'outputs' in data and isinstance(data['outputs'], dict):
+            for key in data['outputs'].keys():
+                match = re.match(r'output_(\d+)', key)
+                if match:
+                    output_number = int(match.group(1))
+                    if output_number > max_output_number:
+                        max_output_number = output_number
+
+        next_output_key = f'output_{max_output_number + 1}'
+
+        # Define the content to append, using the found 'ProteinProphet_NN' key
+        output_2 = {
+            'format': 'http://edamontology.org/format_3747',  # protXML
+            'outputSource': f'{protein_prophet_key}/ProteinProphet_out_1',
+            'type': 'File'
+        }
+
+        # Ensure 'outputs' is in the data and is a dictionary
+        if 'outputs' not in data or not isinstance(data['outputs'], dict):
+            next_output_key = 'output_1'
+
+        # Append the new content to the 'outputs' dictionary
+        data['outputs'][next_output_key] = output_2
+
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+        # Write the updated YAML data to the temporary file
+        with open(temp_file.name, 'w') as file:
+            yaml.dump(data, file, default_flow_style=False)
+
+        return temp_file.name
+
+
 
     def run_workflows(self) -> None:
         """Run the workflows in the given directory and store the results in a json file."""
@@ -410,6 +467,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         ) in self.workflows:  # iterate over the workflows and execute them
             workflow_name = Path(workflow_path).name
             LoggingWrapper.info("Benchmarking " + workflow_name + "...", color="green")
+            workflow_path= self.append_to_yaml_file(workflow_path)
             workflow_execution_information = self.execute_and_benchmark_workflow(workflow_path)
             
             if (workflow_execution_information["status"] == "✗"): 

@@ -161,7 +161,7 @@ def benchmark_successful_step_execution(successfully_executed_steps: List[str], 
             if entry["step"] == step:
                 entry["status"] = "✓"
                 entry["time"] = max(1, execution_time_step)
-                entry["memory"] = max(1, max_memory_step)
+                entry["memory"] = max(1, max_memory_step) if max_memory_step != "-" else "-"
                 entry["warnings"] = warnings_step
                 entry["errors"] = errors_step
                 entry["identified_proteins"] = count_identified_proteins
