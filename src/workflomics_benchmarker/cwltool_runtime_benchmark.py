@@ -2,7 +2,11 @@ import subprocess
 from pathlib import Path
 import os
 import json
-from typing import List, Literal
+import re
+from ruamel.yaml import YAML
+import tempfile
+
+from typing import List, Literal, OrderedDict
 
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
@@ -48,7 +52,7 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
     def __init__(self, args):
         super().__init__(args)
 
-    def execute_and_benchmark_workflow(self, workflow) -> dict:
+    def execute_and_benchmark_workflow(self, workflow, workflow_name) -> dict:
         """
         Execute a single workflow, save the outputs and benchmark each step, i.e., tool, of the workflow.
         TODO: Split into execute and benchmark functions.
@@ -56,6 +60,8 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         ----------
         workflow: str
             The path to the workflow file.
+        workflow_name: str
+            The original name of the workflow file.
 
         Returns
         -------
@@ -63,7 +69,6 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
             A dictionary containing the benchmark results of the workflow.
         """
         workflow_execution_information = {}
-        workflow_name = Path(workflow).name
 
         command = ["cwltool"]
 
@@ -398,6 +403,57 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
 
         return technical_benchmarks
 
+    
+    def append_to_yaml_file(self, original_file_path):
+        yaml = YAML()
+        yaml.indent(mapping=3)
+        # Load the existing YAML data into an OrderedDict
+        with open(original_file_path, 'r') as file:
+            data = yaml.load(file)
+
+        if not isinstance(data, OrderedDict):
+            # If the YAML data is not already an OrderedDict, convert it
+            data = OrderedDict(data)
+
+        # Find a key in the 'steps' dictionary that matches 'ProteinProphet_NN'
+        protein_prophet_key = None
+        if 'steps' in data and isinstance(data['steps'], dict):
+            for key in data['steps'].keys():
+                if re.match(r'ProteinProphet_\d+', key):
+                    protein_prophet_key = key
+                    break
+
+        if protein_prophet_key is None:
+            return original_file_path
+
+        # Ensure 'outputs' is in the data and is a dictionary
+        if 'outputs' not in data or not isinstance(data['outputs'], OrderedDict):
+            data['outputs'] = OrderedDict()
+
+        # Define the content to append, using the found 'ProteinProphet_NN' key
+        output_2 = {
+            'format': 'http://edamontology.org/format_3747',  # protXML
+            'outputSource': f'{protein_prophet_key}/ProteinProphet_out_1',
+            'type': 'File'
+        }
+
+        # Find the highest 'output_X' key in the 'outputs' dictionary
+        max_output_number = max([int(key.split('_')[1]) for key in data['outputs'].keys() if key.startswith('output_')], default=0)
+        next_output_key = f'output_{max_output_number + 1}'
+
+        # Append the new content to the 'outputs' dictionary
+        data['outputs'][next_output_key] = output_2
+
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+
+        # Write the updated YAML data to the temporary file
+        with open(temp_file.name, 'w') as file:
+            yaml.dump(data, file)
+
+        return temp_file.name
+
+
 
     def run_workflows(self) -> None:
         """Run the workflows in the given directory and store the results in a json file."""
@@ -410,7 +466,8 @@ class CWLToolRuntimeBenchmark(CWLToolWrapper):
         ) in self.workflows:  # iterate over the workflows and execute them
             workflow_name = Path(workflow_path).name
             LoggingWrapper.info("Benchmarking " + workflow_name + "...", color="green")
-            workflow_execution_information = self.execute_and_benchmark_workflow(workflow_path)
+            workflow_path= self.append_to_yaml_file(workflow_path)
+            workflow_execution_information = self.execute_and_benchmark_workflow(workflow_path, workflow_name)
             
             if (workflow_execution_information["status"] == "✗"): 
                 LoggingWrapper.error(workflow_name + " failed")
