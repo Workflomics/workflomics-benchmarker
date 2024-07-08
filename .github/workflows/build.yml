@@ -1,0 +1,37 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9']
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install poetry
+        poetry install
+    # - name: Test with pytest
+    #   run: |
+    #     poetry run pytest
+    - name: Build the package
+      run: |
+        poetry build
