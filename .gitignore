@@ -147,3 +147,6 @@ dmypy.json
 tests/data/benchmarks.json
 tests/data/workflow.cwl_output/*
 src/workflomics_benchmarker/to_implement.py
+tests/data/workflow_output/*
+tests/data/workflow_fail_output/*
+tests/data/workflow_fail2_output/*
