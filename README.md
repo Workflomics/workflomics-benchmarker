@@ -12,11 +12,11 @@ Detailed user documentation is available on [readthedocs](https://workflomics.re
 | **DOI** | [![DOI](https://zenodo.org/badge/749899872.svg)](https://zenodo.org/doi/10.5281/zenodo.10839465) |
 | **License** | [![GitHub license](https://img.shields.io/github/license/workflomics/workflomics-benchmarker)](https://github.com/workflomics/workflomics-benchmarker/blob/main/LICENSE) |
 | **OS Support** | [![](https://img.shields.io/badge/linux-supported-green.svg)](https://workflomics.readthedocs.io/en/latest/workflomics-benchmarker/benchmarker.html) [![](https://img.shields.io/badge/macos-supported-green.svg)](https://workflomics.readthedocs.io/en/latest/workflomics-benchmarker/benchmarker.html) [![](https://img.shields.io/badge/windows-WSL2_required-yellow.svg)](https://www.python.org/downloads/) |
-| **Requirements** | [![](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)|
+| **Requirements** | [![](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)|
 
 ## Requirements
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - Docker or Singularity
 
 > **_NOTE:_**  Workflomics Benchmarker is will run on **Linux** and **macOS** without any additional configuration. However, **Windows** users need to use Windows Subsystem for Linux (WSL) to run the tool (see [MS Windows users](#ms-windows-users)).
