@@ -91,7 +91,7 @@ python src/benchmarker/workflomics.py benchmark tests/data/ --singularity
 Run the following command to execute tests:
 
 ```bash
-poetry run pytest -s 
+poetry run pytest 
 ```
 
 This command runs a workflow and benchmarks it, assuming Docker is operational. Results are stored in the `./tests/data` directory.

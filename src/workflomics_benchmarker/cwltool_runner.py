@@ -5,12 +5,14 @@ from pathlib import Path
 from workflomics_benchmarker.cwltool_wrapper import CWLToolWrapper
 from workflomics_benchmarker.loggingwrapper import LoggingWrapper
 
+
 class CWLToolRunner(CWLToolWrapper):
     """
     Class to manage and run CWL (Common Workflow Language) workflows.
     """
-    success_workflows : list = []
-    failed_workflows : list = []
+
+    success_workflows: list = []
+    failed_workflows: list = []
 
     def __init__(self, args):
         """
@@ -37,15 +39,21 @@ class CWLToolRunner(CWLToolWrapper):
         list
             A list of command segments to execute the workflow.
         """
-        base_command = ['cwltool --on-error continue']
+        base_command = ["cwltool"]
         if self.container == "singularity":
-            base_command.append('--singularity')
+            base_command.append("--singularity")
 
         workflow_name = Path(workflow_path).stem
         output_directory = os.path.join(self.outdir, f"{workflow_name}_output")
         Path(output_directory).mkdir(exist_ok=True)
 
-        return base_command + ['--outdir', output_directory, workflow_path, self.input_yaml_path], output_directory
+        base_command.extend(["--on-error", "continue"])
+
+        return (
+            base_command
+            + ["--outdir", output_directory, workflow_path, self.input_yaml_path],
+            output_directory,
+        )
 
     def _execute_command(self, command, workflow_name):
         """
@@ -63,11 +71,15 @@ class CWLToolRunner(CWLToolWrapper):
         bool
             True if the workflow executed successfully, False otherwise.
         """
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        result = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
         print(result.stdout)
 
         if result.returncode == 0:
-            LoggingWrapper.info(f"Workflow {workflow_name} finished successfully.", color="green")
+            LoggingWrapper.info(
+                f"Workflow {workflow_name} finished successfully.", color="green"
+            )
             return True
         else:
             LoggingWrapper.error(f"Workflow {workflow_name} failed.", color="red")
@@ -97,4 +109,6 @@ class CWLToolRunner(CWLToolWrapper):
         for workflow_path in self.workflows:
             self.execute_workflow(workflow_path)
         total_workflows = len(self.success_workflows) + len(self.failed_workflows)
-        LoggingWrapper.info(f"Execution summary: {total_workflows} total, {len(self.success_workflows)} succeeded, {len(self.failed_workflows)} failed.")
+        LoggingWrapper.info(
+            f"Execution summary: {total_workflows} total, {len(self.success_workflows)} succeeded, {len(self.failed_workflows)} failed."
+        )

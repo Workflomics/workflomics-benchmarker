@@ -145,5 +145,5 @@ dmypy.json
 .vscode/
 
 tests/data/benchmarks.json
-tests/data/workflow.cwl_output/*
 src/workflomics_benchmarker/to_implement.py
+tests/data/workflow_*/*

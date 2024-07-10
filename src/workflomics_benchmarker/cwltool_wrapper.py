@@ -33,7 +33,12 @@ class CWLToolWrapper():
         
         self.workflows = sorted([str(file) for file in Path(args.workflows).glob('*.cwl')], key=natural_keys)
         self.version = self.check_cwltool()
-        self.input = self.update_input_yaml(self.input_yaml_path)
+        if hasattr(args, 'interactive') and args.interactive:
+            interactive = True
+        else:
+            interactive = False
+
+        self.input = self.update_input_yaml(self.input_yaml_path, interactive)
 
 
     def check_cwltool(self):
@@ -47,24 +52,44 @@ class CWLToolWrapper():
             print("cwltool is not installed.")
         return version
 
-    def update_input_yaml(self, input_yaml_path):
-        """Update the input yaml file with the paths to the input files"""
+    def update_input_yaml(self, input_yaml_path:str, interactive: bool) -> dict:
+        """
+        Update the input yaml file with the paths to the input files. 
+        If interactive is set to True, the user will be allowed to edit the paths to the input files.
+        
+        Parameters
+        ----------
+        input_yaml_path : str
+            The path to the input yaml file.
+            
+        interactive : bool
+            If True, the user will be allowed to edit the paths to the input files.
+        
+        Returns
+        -------
+        dict
+            A dictionary containing the input file names.
+        """
         inputs = {}
         with open(input_yaml_path, 'r') as file:
             input_data = yaml.safe_load(file)
 
         for key, value in input_data.items():
             if key.startswith('input'):
-                print(f"The path for {key} is {value['path']}. Do you want to change it? (y/n)")
-                answer = input()
-                if answer == 'y':
+                if not interactive:
+                    inputs[key] = {"filename": Path(value['path']).name}
+                    continue
+
+                print(f"The path for {key} is {value['path']}. Would you like to keep this path? ([Y]/n)")
+                answer = input().lower()
+                if answer == 'n' or answer == 'no':
                     new_path = input(f"Enter the path for {key}: ")
                     value['path'] = new_path.strip()
                     inputs[key] = {"filename": Path(value['path']).name}
                 else:
                     inputs[key] = {"filename": Path(value['path']).name}
         with open(input_yaml_path, 'w') as file:
-            documents = yaml.dump(input_data, file)
+            yaml.dump(input_data, file)
         return inputs
 
     
