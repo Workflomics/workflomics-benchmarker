@@ -33,7 +33,7 @@ class CWLToolWrapper():
         
         self.workflows = sorted([str(file) for file in Path(args.workflows).glob('*.cwl')], key=natural_keys)
         self.version = self.check_cwltool()
-        if hasattr(args, 'interactive'):
+        if hasattr(args, 'interactive') and args.interactive:
             interactive = True
         else:
             interactive = False
@@ -81,8 +81,8 @@ class CWLToolWrapper():
                     continue
 
                 print(f"The path for {key} is {value['path']}. Would you like to keep this path? ([Y]/n)")
-                answer = input()
-                if answer == 'n':
+                answer = input().lower()
+                if answer == 'n' or answer == 'no':
                     new_path = input(f"Enter the path for {key}: ")
                     value['path'] = new_path.strip()
                     inputs[key] = {"filename": Path(value['path']).name}

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "workflomics-benchmarker"
-version = "0.2.1"
+version = "0.2.2"
 description = "Library used to execute workflows (in CWL) and benchmark them as part of the Workflomics ecosystem."
 authors = ["Vedran Kasalica <v.kaslica@esciencecenter.nl>",
             "Nauman Ahmed <n.ahmed@esciencecenter.nl>",
